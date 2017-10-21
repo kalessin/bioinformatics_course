@@ -1,3 +1,6 @@
+"""
+Computes the reverse complement of a nucleotids sequence
+"""
 import argparse
 
 _MAP = ('ATGC', 'TACG')

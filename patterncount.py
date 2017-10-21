@@ -1,3 +1,6 @@
+"""
+Counts the ocurrences of a pattern in a text
+"""
 import argparse
 
 def patterncount(text, pattern):

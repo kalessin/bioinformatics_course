@@ -1,3 +1,6 @@
+"""
+Returns the most frequent k-mer patterns in a text, along with the count of ocurrencies
+"""
 import argparse
 from itertools import product
 from collections import defaultdict

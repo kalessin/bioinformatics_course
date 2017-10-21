@@ -1,3 +1,6 @@
+"""
+Finds the position of a pattern in a text
+"""
 import argparse
 
 def find(text, pattern):
