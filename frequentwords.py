@@ -35,12 +35,34 @@ def patterntonumber(pattern):
     raise ValueError(str(pattern))
 
 
+def patterntonumberR(pattern):
+    if not pattern:
+        return 0
+    symbol = pattern[-1]
+    prefix = pattern[:-1]
+    return  4 * patterntonumberR(prefix) + _SYMBOLS.find(symbol)
+
+
+def patterntonumberB(pattern):
+    return int(''.join([str(_SYMBOLS.find(c)) for c in pattern]), )
+
+
 def numbertopattern(i, k):
     count = 0
     for c in product(*(_SYMBOLS,) * k):
         if count == i:
             return ''.join(c)
         count += 1
+
+
+def numbertopatternR(i, k):
+    pattern = ''
+    while i > 0:
+        i, s = divmod(i, 4)
+        pattern = _SYMBOLS[s] + pattern
+    while len(pattern) < k:
+        pattern = 'A' + pattern
+    return pattern
 
 
 def computingfrequencies(text, k):
