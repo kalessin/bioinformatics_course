@@ -11,6 +11,7 @@ def skew(text):
             skew += 1
         yield skew
 
+
 def minskewindex(text, reverse=False):
     result = []
     minskew = float('inf')
