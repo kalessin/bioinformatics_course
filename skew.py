@@ -11,20 +11,47 @@ def skew(text):
             skew += 1
         yield skew
 
-def minskewindex(text):
+def minskewindex(text, reverse=False):
     result = []
     minskew = float('inf')
+    n = len(text)
+    if reverse:
+        text = text[::-1]
     for i, s in enumerate(skew(text)):
         if s < minskew:
             result = [i]
             minskew = s
         elif s == minskew:
             result.append(i)
+    if reverse:
+        result = [n - i for i in result]
+    return result
+
+
+def maxskewindex(text, reverse=False):
+    result = []
+    maxskew = -float('inf')
+    n = len(text)
+    if reverse:
+        text = text[::-1]
+    for i, s in enumerate(skew(text)):
+        if s > maxskew:
+            result = [i]
+            maxskew = s
+        elif s == maxskew:
+            result.append(i)
+    if reverse:
+        result = [n - i for i in result]
     return result
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('text', type=argparse.FileType('r'))
+    parser.add_argument('--reverse', action='store_true')
+    parser.add_argument('--find-max', action='store_true')
     args = parser.parse_args()
-    print ' '.join(`i` for i in minskewindex(args.text.read().strip()))
+    if args.find_max:
+        print ' '.join(`i` for i in maxskewindex(args.text.read().strip(), args.reverse))
+    else:
+        print ' '.join(`i` for i in minskewindex(args.text.read().strip(), args.reverse))
