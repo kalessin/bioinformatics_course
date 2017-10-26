@@ -7,6 +7,7 @@ from collections import defaultdict
 
 
 import patterncount
+import hamming
 
 
 def frequentwords(text, k):
@@ -85,20 +86,74 @@ def fasterfrequentwords(text, k):
     return frequentpatterns, maxcount
 
 
-def computingfrequenciesII(text, k):
+def neighbors(pattern, d):
+    """
+    >>> neighbors('AA', 1)
+    set(['AA', 'AC', 'AG', 'CA', 'AT', 'GA', 'TA'])
+    """
+    if d == 0:
+        return {pattern}
+    if len(pattern) == 1:
+        return set(_SYMBOLS)
+    first, suffix = pattern[0], pattern[1:]
+    neighborhood = set()
+    for sn in neighbors(suffix, d):
+        if hamming.hamming(suffix, sn) < d:
+            for symbol in _SYMBOLS:
+                neighborhood.add(symbol + sn)
+        else: # hamming.hamming(suffix, sn) == d
+            neighborhood.add(first + sn)
+    return neighborhood
+
+
+def computingfrequenciesII(text, k, d=0):
+    """
+    >>> dict(computingfrequenciesII('AAAAAAAAAA', 2))
+    {'AA': 9}
+    >>> dict(computingfrequenciesII('AAAAAAAAAA', 2, 1))
+    {'AA': 9, 'AC': 9, 'AT': 9, 'AG': 9, 'CA': 9, 'GA': 9, 'TA': 9}
+    >>> dict(computingfrequenciesII('TAGCG', 2, 1))
+    {'AA': 2, 'AC': 2, 'GT': 1, 'AG': 2, 'CC': 2, 'CA': 2, 'CG': 2, 'GG': 3, 'GC': 1, 'AT': 1, 'GA': 2, 'CT': 1, 'TT': 1, 'TG': 3, 'TC': 2, 'TA': 1}
+    """
     frequencyarray = defaultdict(int)
     n = len(text)
     for i in range(0, n - k + 1):
         pattern = text[i:i+k]
         frequencyarray[pattern] += 1
+    if d > 0: # avoid unneeded step if d == 0
+        mfrequencyarray = frequencyarray.copy()
+        patterns = frequencyarray.keys()
+        for i in range(0, len(patterns)):
+            for neighbor in neighbors(patterns[i], d):
+                if neighbor != patterns[i]:
+                    mfrequencyarray[patterns[i]] += frequencyarray[neighbor]
+                    if neighbor not in patterns: # we will count it later
+                        mfrequencyarray[neighbor] += frequencyarray[patterns[i]]
+        return mfrequencyarray
     return frequencyarray
 
 
-def frequentwordsII(text, k):
-    frequencyarray = computingfrequenciesII(text, k)
+def frequentwordsII(text, k, d=0):
+    """
+    The fastest one
+    >>> s = frequentwordsII('AGTCAGTC', 4, 2)[0]
+    >>> s == {'TCTC', 'CGGC', 'AAGC', 'TGTG', 'GGCC', 'AGGT', 'ATCC', 'ACTG', 'ACAC', 'AGAG', 'ATTA', 'TGAC', 'AATT', 'CGTT', 'GTTC', 'GGTA', 'AGCA', 'CATC'}
+    True
+    >>> frequentwordsII('AATTAATTGGTAGGTAGGTA', 4)[0]
+    set(['GGTA'])
+    >>> s = frequentwordsII('ATA', 3, 1)[0]
+    >>> s == {'AAA', 'ACA', 'AGA', 'ATA', 'ATC', 'ATG', 'ATT', 'CTA', 'GTA', 'TTA'}
+    True
+    >>> frequentwordsII('AAT', 3, 0)[0]
+    set(['AAT'])
+    >>> frequentwordsII('TAGCG', 2, 1)[0]
+    set(['GG', 'TG'])
+    >>> s = frequentwordsII('ACGTTGCATGTCGCATGATGCATGAGAGCT', 4, 1)[0]
+    >>> s == set(['ATGC', 'ATGT', 'GATG'])
+    True
+    """
+    frequencyarray = computingfrequenciesII(text, k, d)
     maxcount = max(frequencyarray.itervalues())
-    if maxcount == 1:
-        return set(), 1
     frequentpatterns = set()
     for p, c in frequencyarray.iteritems():
         if c == maxcount:
@@ -109,7 +164,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("text", metavar="TEXTFILE", type=argparse.FileType("r"))
     parser.add_argument("k", type=int)
-    parser.add_argument("--alg", type=int, default=0)
+    parser.add_argument("--alg", type=int, default=2)
+    parser.add_argument("--hamming", type=int, default=0)
     args = parser.parse_args()
     algmap = {
         0: frequentwords,
@@ -117,4 +173,4 @@ if __name__ == '__main__':
         2: frequentwordsII,
     }
 
-    print "frequent words: %s (%d)" % algmap[args.alg](args.text.read().strip(), args.k)
+    print "frequent words: %s (%d)" % algmap[args.alg](args.text.read().strip(), args.k, args.hamming)
