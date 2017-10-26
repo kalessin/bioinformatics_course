@@ -8,6 +8,7 @@ from collections import defaultdict
 
 import patterncount
 import hamming
+import rcomplement
 
 
 def frequentwords(text, k):
@@ -106,7 +107,7 @@ def neighbors(pattern, d):
     return neighborhood
 
 
-def computingfrequenciesII(text, k, d=0):
+def computingfrequenciesII(text, k, d=0, rc=False):
     """
     >>> dict(computingfrequenciesII('AAAAAAAAAA', 2))
     {'AA': 9}
@@ -114,6 +115,8 @@ def computingfrequenciesII(text, k, d=0):
     {'AA': 9, 'AC': 9, 'AT': 9, 'AG': 9, 'CA': 9, 'GA': 9, 'TA': 9}
     >>> dict(computingfrequenciesII('TAGCG', 2, 1))
     {'AA': 2, 'AC': 2, 'GT': 1, 'AG': 2, 'CC': 2, 'CA': 2, 'CG': 2, 'GG': 3, 'GC': 1, 'AT': 1, 'GA': 2, 'CT': 1, 'TT': 1, 'TG': 3, 'TC': 2, 'TA': 1}
+    >>> dict(computingfrequenciesII('AAAAAAAAAA', 2, 1, True))
+    {'AA': 9, 'AC': 9, 'GT': 9, 'AG': 9, 'CA': 9, 'TC': 9, 'AT': 18, 'GA': 9, 'TG': 9, 'TA': 18, 'TT': 9, 'CT': 9}
     """
     frequencyarray = defaultdict(int)
     n = len(text)
@@ -123,17 +126,26 @@ def computingfrequenciesII(text, k, d=0):
     if d > 0: # avoid unneeded step if d == 0
         mfrequencyarray = frequencyarray.copy()
         patterns = frequencyarray.keys()
-        for i in range(0, len(patterns)):
-            for neighbor in neighbors(patterns[i], d):
-                if neighbor != patterns[i]:
-                    mfrequencyarray[patterns[i]] += frequencyarray[neighbor]
-                    if neighbor not in patterns: # we will count it later
-                        mfrequencyarray[neighbor] += frequencyarray[patterns[i]]
-        return mfrequencyarray
+        for pattern in patterns:
+            for neighbor in neighbors(pattern, d):
+                if neighbor != pattern:
+                    mfrequencyarray[pattern] += frequencyarray[neighbor]
+                    if neighbor not in patterns: # if neighbor in patterns, we will count it later, or has been counted before
+                        mfrequencyarray[neighbor] += frequencyarray[pattern]
+        frequencyarray = mfrequencyarray
+    if rc:
+        mfrequencyarray = frequencyarray.copy()
+        patterns = frequencyarray.keys()
+        for pattern in patterns:
+            rcpattern = rcomplement.rcomplement(pattern)
+            mfrequencyarray[pattern] += frequencyarray[rcpattern]
+            if rcpattern not in patterns:
+                mfrequencyarray[rcpattern] += frequencyarray[pattern]
+        frequencyarray = mfrequencyarray
     return frequencyarray
 
 
-def frequentwordsII(text, k, d=0):
+def frequentwordsII(text, k, d=0, rc=False):
     """
     The fastest one
     >>> s = frequentwordsII('AGTCAGTC', 4, 2)[0]
@@ -151,8 +163,23 @@ def frequentwordsII(text, k, d=0):
     >>> s = frequentwordsII('ACGTTGCATGTCGCATGATGCATGAGAGCT', 4, 1)[0]
     >>> s == set(['ATGC', 'ATGT', 'GATG'])
     True
+    >>> frequentwordsII('ACGTTGCATGTCGCATGATGCATGAGAGCT', 4, 1, True)[0]
+    set(['ACAT', 'ATGT'])
+    >>> frequentwordsII('AAAAAAAAAA', 2, 1, True)[0]
+    set(['AT', 'TA'])
+    >>> frequentwordsII('AGTCAGTC', 4, 2, True)[0]
+    set(['GGCC', 'AATT'])
+    >>> frequentwordsII('AATTAATTGGTAGGTAGGTA', 4, 0, True)[0]
+    set(['AATT'])
+    >>> s = frequentwordsII('ATA', 3, 1, True)[0]
+    >>> s == set('AAA AAT ACA AGA ATA ATC ATG ATT CAT CTA GAT GTA TAA TAC TAG TAT TCT TGT TTA TTT'.split(' '))
+    True
+    >>> frequentwordsII('AAT', 3, 0, True)[0]
+    set(['AAT', 'ATT'])
+    >>> frequentwordsII('TAGCG', 2, 1, True)[0]
+    set(['CC', 'GG', 'CA', 'TG'])
     """
-    frequencyarray = computingfrequenciesII(text, k, d)
+    frequencyarray = computingfrequenciesII(text, k, d, rc)
     maxcount = max(frequencyarray.itervalues())
     frequentpatterns = set()
     for p, c in frequencyarray.iteritems():
@@ -166,6 +193,7 @@ if __name__ == '__main__':
     parser.add_argument("k", type=int)
     parser.add_argument("--alg", type=int, default=2)
     parser.add_argument("--hamming", type=int, default=0)
+    parser.add_argument("--with-reverse-complement", action='store_true')
     args = parser.parse_args()
     algmap = {
         0: frequentwords,
@@ -173,4 +201,4 @@ if __name__ == '__main__':
         2: frequentwordsII,
     }
 
-    print "frequent words: %s (%d)" % algmap[args.alg](args.text.read().strip(), args.k, args.hamming)
+    print "frequent words: %s" % ' '.join(algmap[args.alg](args.text.read().strip(), args.k, args.hamming, args.with_reverse_complement)[0])
