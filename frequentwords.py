@@ -9,6 +9,7 @@ from collections import defaultdict
 import patterncount
 import hamming
 import rcomplement
+import multifile
 
 
 def frequentwords(text, k):
@@ -107,7 +108,7 @@ def neighbors(pattern, d):
     return neighborhood
 
 
-def computingfrequenciesII(text, k, d=0, rc=False):
+def computingfrequenciesII(text, k, d=0, rc=False, start=0, end=None):
     """
     >>> dict(computingfrequenciesII('AAAAAAAAAA', 2))
     {'AA': 9}
@@ -120,7 +121,11 @@ def computingfrequenciesII(text, k, d=0, rc=False):
     """
     frequencyarray = defaultdict(int)
     n = len(text)
-    for i in range(0, n - k + 1):
+    if end is None:
+        end = n
+    else:
+        end = min(n, end)
+    for i in range(start, end - k + 1):
         pattern = text[i:i+k]
         frequencyarray[pattern] += 1
     if d > 0: # avoid unneeded step if d == 0
@@ -145,7 +150,7 @@ def computingfrequenciesII(text, k, d=0, rc=False):
     return frequencyarray
 
 
-def frequentwordsII(text, k, d=0, rc=False):
+def frequentwordsII(text, k, d=0, rc=False, start=0, end=None):
     """
     The fastest one
     >>> s = frequentwordsII('AGTCAGTC', 4, 2)[0]
@@ -179,7 +184,7 @@ def frequentwordsII(text, k, d=0, rc=False):
     >>> frequentwordsII('TAGCG', 2, 1, True)[0]
     set(['CC', 'GG', 'CA', 'TG'])
     """
-    frequencyarray = computingfrequenciesII(text, k, d, rc)
+    frequencyarray = computingfrequenciesII(text, k, d, rc, start, end)
     maxcount = max(frequencyarray.itervalues())
     frequentpatterns = set()
     for p, c in frequencyarray.iteritems():
@@ -191,14 +196,17 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("text", metavar="TEXTFILE", type=argparse.FileType("r"))
     parser.add_argument("k", type=int)
-    parser.add_argument("--alg", type=int, default=2)
     parser.add_argument("--hamming", type=int, default=0)
     parser.add_argument("--with-reverse-complement", action='store_true')
+    parser.add_argument("--start", type=int, default=0)
+    parser.add_argument("-L", type=int)
     args = parser.parse_args()
-    algmap = {
-        0: frequentwords,
-        1: fasterfrequentwords,
-        2: frequentwordsII,
-    }
 
-    print "frequent words: %s" % ' '.join(algmap[args.alg](args.text.read().strip(), args.k, args.hamming, args.with_reverse_complement)[0])
+    if args.L is None:
+        end = None
+    else:
+        end = args.start + args.L
+    s = multifile.read(args.text)
+    fwords = frequentwordsII(s.read().strip(), args.k, args.hamming, args.with_reverse_complement, args.start, end)
+    print "frequent words: %s" % ' '.join(fwords[0])
+    print "Max frequency: %s" % fwords[1]

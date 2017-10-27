@@ -1,5 +1,7 @@
 import argparse
 
+import multifile
+
 
 def skew(text):
     skew = 0
@@ -52,7 +54,8 @@ if __name__ == '__main__':
     parser.add_argument('--reverse', action='store_true')
     parser.add_argument('--find-max', action='store_true')
     args = parser.parse_args()
+    s = multifile.read(args.text)
     if args.find_max:
-        print ' '.join(`i` for i in maxskewindex(args.text.read().strip(), args.reverse))
+        print ' '.join(`i` for i in maxskewindex(s.read().strip(), args.reverse))
     else:
-        print ' '.join(`i` for i in minskewindex(args.text.read().strip(), args.reverse))
+        print ' '.join(`i` for i in minskewindex(s.read().strip(), args.reverse))
