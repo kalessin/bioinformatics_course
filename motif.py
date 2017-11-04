@@ -7,19 +7,27 @@ from frequentwords import computingfrequenciesII, neighbors, numbertopattern
 _SYMBOLS = 'ACGT'
 
 
-def score(strings):
-    """
-    Returns entropy of a set of k-mers
-    """
+def profileMatrix(strings):
     t = len(strings)
     k = len(strings[0])
     count = np.zeros((4, k))
     for string in strings:
         for idx, symbol in enumerate(string):
             count[_SYMBOLS.find(symbol), idx] += 1
-    profile = count / t
-    f = np.vectorize(lambda x: 0 if np.isnan(x) else x)
-    return np.sum(f(- profile * np.log2(profile)))
+    return count / t
+
+
+def score(strings, entropy=False):
+    """
+    Returns score of a set of k-mers motifs, and the profile matrix. If entropy is False, the score is the number of mismatches against the
+    pattern formed by concatenating the most probable symbol on each column. Either it will use entropy.
+    """
+    profile = profileMatrix(strings)
+    if entropy:
+        f = np.vectorize(lambda x: 0 if np.isnan(x) else x)
+        return np.sum(f(- profile * np.log2(profile))), profile
+    else:
+        return np.sum(profile) - np.sum(np.max(profile, 0)), profile
 
 
 def motiffind_basic(strings, k, d):
@@ -95,7 +103,7 @@ def motifspattern(pattern, strings):
 def medianstring(dna, k):
     """
     >>> medianstring(["AAATTGACGCAT", "GACGACCACGTT", "CGTCAGCGCCTG", "GCTGAGCACCGG", "AGTTCGGGACAG"], 3)
-    ['GAC']
+    (['GAC'], 2)
     """
     distance = float('inf')
     medians = []
@@ -108,3 +116,47 @@ def medianstring(dna, k):
         elif d == distance:
             medians.append(pattern)
     return medians, distance
+
+
+_SYMBOLS = 'ACGT'
+def mostprobablekmer(text, k, profile):
+    """
+    >>> import numpy as np
+    >>> text = "ACCTGTTTATTGCCTAAGTTCCGAACAAACCCAATATAGCCCGAGGGCCT"
+    >>> k = 5
+    >>> profile = np.array([[0.2, 0.2, 0.3, 0.2, 0.3], [0.4, 0.3, 0.1, 0.5, 0.1], [0.3, 0.3, 0.5, 0.2, 0.4], [0.1, 0.2, 0.1, 0.1, 0.2]])
+    >>> mostprobablekmer(text, k, profile)
+    ('CCGAG', 0.0048000000000000004)
+    """
+    pmax = 0
+    maxkmer = None
+    for i in range(len(text) - k + 1):
+        kmer = text[i:i+k]
+        p = 1
+        for j, s in enumerate(kmer):
+            i = _SYMBOLS.find(s)
+            p *= profile[i, j]
+        if p > pmax or maxkmer is None:
+            pmax = p
+            maxkmer = kmer
+    return maxkmer, pmax
+
+
+def greedymotifsearch(dna, k, entropy=False):
+    """
+    >>> greedymotifsearch(['GGCGTTCAGGCA', 'AAGAATCAGTCA', 'CAAGGAGTTCGC', 'CACGTCAATCAC', 'CAATAATATTCG'], 3)
+    ['CAG', 'CAG', 'CAA', 'CAA', 'CAA']
+    >>> greedymotifsearch(['GCCCAA', 'GGCCTG', 'AACCTA', 'TTCCTT'], 3)
+    ['GCC', 'GCC', 'AAC', 'TTC']
+    """
+    t = len(dna)
+    bestMotifs = [d[0:k] for d in dna]
+    for i in range(len(dna[0]) - k + 1):
+        motifs = [dna[0][i:i+k]]
+        sc, profile = score(motifs, entropy)
+        for i in range(1, t):
+            motifs.append(mostprobablekmer(dna[i], k, profile)[0])
+            sc, profile = score(motifs, entropy)
+        if sc < score(bestMotifs)[0]:
+            bestMotifs = motifs
+    return bestMotifs
