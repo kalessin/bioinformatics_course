@@ -57,13 +57,14 @@ def motifspattern(pattern, strings):
     (['AAG', 'CAA', 'AAA', 'AAA'], 2)
     >>> motifspattern('AAA', ['AAGC', 'CAAG', 'CCGA', 'CGTT'])
     (['AAG', 'CAA', 'CGA', 'CGT'], 7)
+    >>> motifspattern('AAA', ['TTACCTTAAC', 'GATATCTGTC', 'ACGGCGTTCG', 'CCCTAAAGAG', 'CGTCAGAGGT'])
+    (['TAA', 'ATA', 'ACG', 'AAA', 'AGA'], 5)
     """
     d = 0
     t = len(strings)
     result_motifs = [pattern if pattern in s else None for s in strings]
     remaining = [strings[i] if result_motifs[i] is None else None for i in range(t)]
     result_distance = 0
-    remaining = [strings[i] for i, s in enumerate(result_motifs) if s is None]
     k = len(pattern)
     processed_neighbors = {s: {pattern} for s in strings}
     while any(remaining):
