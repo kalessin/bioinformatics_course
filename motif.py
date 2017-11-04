@@ -1,7 +1,7 @@
 from math import log
 import numpy as np
 
-from frequentwords import computingfrequenciesII, neighbors
+from frequentwords import computingfrequenciesII, neighbors, numbertopattern
 
 
 _SYMBOLS = 'ACGT'
@@ -50,7 +50,7 @@ def motiffind_basic(strings, k, d):
 def motifspattern(pattern, strings):
     """
     Operates in inverse way than motiffind_basic: given a candidate pattern, return a list of motifs, one from each string,
-    that minimizes the hamming distance of pattern to them
+    that minimizes the hamming distance of pattern to them. It also returns the resulting sum of hamming distances.
     >>> motifspattern('AAA', ['AAAC', 'AAAG', 'AAAT', 'AAAA'])
     (['AAA', 'AAA', 'AAA', 'AAA'], 0)
     >>> motifspattern('AAA', ['AAGC', 'CAAG', 'AAAT', 'AAAA'])
@@ -90,3 +90,21 @@ def motifspattern(pattern, strings):
             if not any(remaining):
                 return result_motifs, result_distance
     return result_motifs, result_distance
+
+
+def medianstring(dna, k):
+    """
+    >>> medianstring(["AAATTGACGCAT", "GACGACCACGTT", "CGTCAGCGCCTG", "GCTGAGCACCGG", "AGTTCGGGACAG"], 3)
+    ['GAC']
+    """
+    distance = float('inf')
+    medians = []
+    for i in xrange(4 ** k):
+        pattern = numbertopattern(i, k)
+        d = motifspattern(pattern, dna)[1]
+        if d < distance:
+            distance = d
+            medians = [pattern]
+        elif d == distance:
+            medians.append(pattern)
+    return medians, distance
