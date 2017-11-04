@@ -145,18 +145,20 @@ def mostprobablekmer(text, k, profile):
 def greedymotifsearch(dna, k, entropy=False):
     """
     >>> greedymotifsearch(['GGCGTTCAGGCA', 'AAGAATCAGTCA', 'CAAGGAGTTCGC', 'CACGTCAATCAC', 'CAATAATATTCG'], 3)
-    ['CAG', 'CAG', 'CAA', 'CAA', 'CAA']
+    (['CAG', 'CAG', 'CAA', 'CAA', 'CAA'], 0.39999999999999991)
     >>> greedymotifsearch(['GCCCAA', 'GGCCTG', 'AACCTA', 'TTCCTT'], 3)
-    ['GCC', 'GCC', 'AAC', 'TTC']
+    (['GCC', 'GCC', 'AAC', 'TTC'], 1.0)
     """
     t = len(dna)
     bestMotifs = [d[0:k] for d in dna]
+    bestScore = score(bestMotifs)[0]
     for i in range(len(dna[0]) - k + 1):
         motifs = [dna[0][i:i+k]]
         sc, profile = score(motifs, entropy)
         for j in range(1, t):
             motifs.append(mostprobablekmer(dna[j], k, profile)[0])
             sc, profile = score(motifs, entropy)
-        if sc < score(bestMotifs)[0]:
+        if sc < bestScore:
             bestMotifs = motifs
-    return bestMotifs
+            bestScore = sc
+    return bestMotifs, bestScore
