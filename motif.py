@@ -154,8 +154,8 @@ def greedymotifsearch(dna, k, entropy=False):
     for i in range(len(dna[0]) - k + 1):
         motifs = [dna[0][i:i+k]]
         sc, profile = score(motifs, entropy)
-        for i in range(1, t):
-            motifs.append(mostprobablekmer(dna[i], k, profile)[0])
+        for j in range(1, t):
+            motifs.append(mostprobablekmer(dna[j], k, profile)[0])
             sc, profile = score(motifs, entropy)
         if sc < score(bestMotifs)[0]:
             bestMotifs = motifs
