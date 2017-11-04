@@ -143,20 +143,25 @@ def mostprobablekmer(text, k, profile):
     return maxkmer, pmax
 
 
-def greedymotifsearch(dna, k, entropy=False):
+def greedymotifsearch(dna, k, entropy=False, succession=1):
     """
-    >>> greedymotifsearch(['GGCGTTCAGGCA', 'AAGAATCAGTCA', 'CAAGGAGTTCGC', 'CACGTCAATCAC', 'CAATAATATTCG'], 3)
+    >>> greedymotifsearch(['GGCGTTCAGGCA', 'AAGAATCAGTCA', 'CAAGGAGTTCGC', 'CACGTCAATCAC', 'CAATAATATTCG'], 3, succession=0)
     (['CAG', 'CAG', 'CAA', 'CAA', 'CAA'], 1.9999999999999996)
-    >>> greedymotifsearch(['GCCCAA', 'GGCCTG', 'AACCTA', 'TTCCTT'], 3)
+    >>> greedymotifsearch(['GGCGTTCAGGCA', 'AAGAATCAGTCA', 'CAAGGAGTTCGC', 'CACGTCAATCAC', 'CAATAATATTCG'], 3)
+    (['TTC', 'ATC', 'TTC', 'ATC', 'TTC'], 1.9999999999999996)
+    >>> greedymotifsearch(['GCCCAA', 'GGCCTG', 'AACCTA', 'TTCCTT'], 3, succession=0)
     (['GCC', 'GCC', 'AAC', 'TTC'], 4.0)
+    >>> greedymotifsearch(['GCCCAA', 'GGCCTG', 'AACCTA', 'TTCCTT'], 3)
+    (['CCA', 'CCT', 'CCT', 'CCT'], 1.0)
     """
     t = len(dna)
     bestMotifs = [d[0:k] for d in dna]
-    bestScore = score(bestMotifs)[0]
+    bestScore = score(bestMotifs, entropy)[0]
     for i in range(len(dna[0]) - k + 1):
         motifs = [dna[0][i:i+k]]
         sc, profile = score(motifs, entropy)
         for j in range(1, t):
+            profile += succession # Laplace's succession rule
             motifs.append(mostprobablekmer(dna[j], k, profile)[0])
             sc, profile = score(motifs, entropy)
         if sc < bestScore:
