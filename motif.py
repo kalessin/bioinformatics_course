@@ -20,14 +20,15 @@ def profileMatrix(strings):
 def score(strings, entropy=False):
     """
     Returns score of a set of k-mers motifs, and the profile matrix. If entropy is False, the score is the number of mismatches against the
-    pattern formed by concatenating the most probable symbol on each column. Either it will use entropy.
+    consensus string.
     """
     profile = profileMatrix(strings)
     if entropy:
         f = np.vectorize(lambda x: 0 if np.isnan(x) else x)
         return np.sum(f(- profile * np.log2(profile))), profile
     else:
-        return np.sum(profile) - np.sum(np.max(profile, 0)), profile
+        t = len(strings)
+        return t * (np.sum(profile) - np.sum(np.max(profile, 0))), profile
 
 
 def motiffind_basic(strings, k, d):
@@ -145,9 +146,9 @@ def mostprobablekmer(text, k, profile):
 def greedymotifsearch(dna, k, entropy=False):
     """
     >>> greedymotifsearch(['GGCGTTCAGGCA', 'AAGAATCAGTCA', 'CAAGGAGTTCGC', 'CACGTCAATCAC', 'CAATAATATTCG'], 3)
-    (['CAG', 'CAG', 'CAA', 'CAA', 'CAA'], 0.39999999999999991)
+    (['CAG', 'CAG', 'CAA', 'CAA', 'CAA'], 1.9999999999999996)
     >>> greedymotifsearch(['GCCCAA', 'GGCCTG', 'AACCTA', 'TTCCTT'], 3)
-    (['GCC', 'GCC', 'AAC', 'TTC'], 1.0)
+    (['GCC', 'GCC', 'AAC', 'TTC'], 4.0)
     """
     t = len(dna)
     bestMotifs = [d[0:k] for d in dna]
