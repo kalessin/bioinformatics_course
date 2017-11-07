@@ -103,6 +103,8 @@ def motifspattern(pattern, strings):
 
 def medianstring(dna, k):
     """
+    Generates all possible patterns of length k and searches all them in the target dna strings. Returns
+    the ones that matches in all them with the minimal total hamming distance
     >>> medianstring(["AAATTGACGCAT", "GACGACCACGTT", "CGTCAGCGCCTG", "GCTGAGCACCGG", "AGTTCGGGACAG"], 3)
     (['GAC'], 2)
     """
@@ -145,6 +147,8 @@ def mostprobablekmer(text, k, profile):
 
 def greedymotifsearch(dna, k, entropy=False, succession=1):
     """
+    Returns a set of motifs, one motif for each input dna string, that minimizes the score function, with
+    some biological heuristics for avoiding to search every possible pattern as medianstring does.
     >>> greedymotifsearch(['GGCGTTCAGGCA', 'AAGAATCAGTCA', 'CAAGGAGTTCGC', 'CACGTCAATCAC', 'CAATAATATTCG'], 3, succession=0)
     (['CAG', 'CAG', 'CAA', 'CAA', 'CAA'], 1.9999999999999996)
     >>> greedymotifsearch(['GGCGTTCAGGCA', 'AAGAATCAGTCA', 'CAAGGAGTTCGC', 'CACGTCAATCAC', 'CAATAATATTCG'], 3)
