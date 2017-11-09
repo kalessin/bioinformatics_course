@@ -1,3 +1,5 @@
+import random
+
 from math import log
 import numpy as np
 
@@ -145,6 +147,10 @@ def mostprobablekmer(text, k, profile):
     return maxkmer, pmax
 
 
+def mostprobablekmers(dna, k, profile):
+    return [mostprobablekmer(s, k, profile)[0] for s in dna]
+
+
 def greedymotifsearch(dna, k, entropy=False, succession=1):
     """
     Returns a set of motifs, one motif for each input dna string, that minimizes the score function, with
@@ -172,3 +178,29 @@ def greedymotifsearch(dna, k, entropy=False, succession=1):
             bestMotifs = motifs
             bestScore = sc
     return bestMotifs, bestScore
+
+
+def randomizedmotifsearch(dna, k, entropy=False, succession=1):
+    """
+    >>> while True:
+    ...    motifs, score = randomizedmotifsearch(['GCCCAA', 'GGCCTG', 'AACCTA', 'TTCCTT'], 3)
+    ...    if score == 1.0:
+    ...        break
+    >>> motifs in (['CCA', 'CCT', 'CCT', 'CCT'], ['CCC', 'CCT', 'CCT', 'CCT'])
+    True
+    """
+    t = len(dna)
+    bestmotifs = []
+    for string in dna:
+        i = random.randint(0, len(string) - k)
+        bestmotifs.append(string[i:i + k])
+    bestscore, profile = score(bestmotifs, entropy)
+    while True:
+        profile += succession
+        motifs = mostprobablekmers(dna, k, profile)
+        sc, profile = score(motifs, entropy)
+        if sc < bestscore:
+            bestmotifs = motifs
+            bestscore = sc
+        else:
+            return bestmotifs, bestscore
