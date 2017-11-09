@@ -204,3 +204,27 @@ def randomizedmotifsearch(dna, k, entropy=False, succession=1):
             bestscore = sc
         else:
             return bestmotifs, bestscore
+
+
+def randomizedmotifsearchx(dna, k, iterations=1000, entropy=False, succession=1):
+    """
+    >>> randomizedmotifsearchx(['GCCCAA', 'GGCCTG', 'AACCTA', 'TTCCTT'], 3)
+    ([('CCA', 'CCT', 'CCT', 'CCT'), ('CCC', 'CCT', 'CCT', 'CCT')], 1.0)
+    >>> while True:
+    ...     best, score = randomizedmotifsearchx(['CGCCCCTCTCGGGGGTGTTCAGTAAACGGCCA', 'GGGCGAGGTATGTGTAAGTGCCAAGGTGCCAG', 'TAGTACCGAGACCGAAAGAAGTATACAGGCGT', 'TAGATCAAGTTTCAGGTGCACGTCGGTGAACC', 'AATCCACCAGCTCCACGTGCAATGTTGGCCTA'], 8)
+    ...     if score == 9.0:
+    ...         break
+    >>> set(best).issubset({('AACGGCCA', 'AAGTGCCA', 'TAGTACCG', 'AAGTTTCA', 'ACGTGCAA'), ('TCTCGGGG', 'CCAAGGTG', 'TACAGGCG', 'TTCAGGTG', 'TCCACGTG')})
+    True
+    """
+    best_score = float('inf')
+    all_best_motifs = set()
+    while iterations > 0:
+        iterations -= 1
+        motifs, sc = randomizedmotifsearch(dna, k, entropy, succession)
+        if sc < best_score:
+            all_best_motifs = {tuple(motifs)}
+            best_score = sc
+        elif sc == best_score:
+            all_best_motifs.add(tuple(motifs))
+    return sorted(all_best_motifs), best_score
