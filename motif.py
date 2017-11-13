@@ -4,6 +4,7 @@ from math import log
 import numpy as np
 
 from frequentwords import computingfrequenciesII, neighbors, numbertopattern
+from randomW import randomW
 
 
 _SYMBOLS = 'ACGT'
@@ -139,12 +140,28 @@ def mostprobablekmer(text, k, profile):
         kmer = text[i:i+k]
         p = 1
         for j, s in enumerate(kmer):
-            i = _SYMBOLS.find(s)
-            p *= profile[i, j]
+            ii = _SYMBOLS.find(s)
+            p *= profile[ii, j]
         if p > pmax or maxkmer is None:
             pmax = p
             maxkmer = kmer
     return maxkmer, pmax
+
+
+def profilerandomkmer(text, k, profile):
+    """
+    Instead of retrieving the most probable k-mer, it picks one randomly, with a probability distribution equal to the probability of each one
+    """
+    parray = []
+    for i in range(len(text) - k + 1):
+        kmer = text[i:i+k]
+        p = 1
+        for j, s in enumerate(kmer):
+            i = _SYMBOLS.find(s)
+            p *= profile[i, j]
+        parray.append(p)
+    i = randomW(np.array(parray))
+    return text[i:i+k], parray[i]
 
 
 def mostprobablekmers(dna, k, profile):
@@ -180,6 +197,23 @@ def greedymotifsearch(dna, k, entropy=False, succession=1):
     return bestMotifs, bestScore
 
 
+def pickbestrandommotifs(dna, k, n=1, entropy=False):
+    bestmotifs = None
+    bestscore = float('inf')
+    bestprofile = None
+    for i in range(n):
+        motifs = []
+        for string in dna:
+            i = random.randint(0, len(string) - k)
+            motifs.append(string[i:i + k])
+        sc, profile = score(motifs, entropy)
+        if sc < bestscore:
+            bestmotifs = motifs
+            bestscore = sc
+            bestprofile = profile
+    return bestmotifs, bestscore, bestprofile
+
+
 def randomizedmotifsearch(dna, k, entropy=False, succession=1):
     """
     >>> while True:
@@ -189,12 +223,8 @@ def randomizedmotifsearch(dna, k, entropy=False, succession=1):
     >>> motifs in (['CCA', 'CCT', 'CCT', 'CCT'], ['CCC', 'CCT', 'CCT', 'CCT'])
     True
     """
+    bestmotifs, bestscore, profile = pickbestrandommotifs(dna, k, entropy=entropy)
     t = len(dna)
-    bestmotifs = []
-    for string in dna:
-        i = random.randint(0, len(string) - k)
-        bestmotifs.append(string[i:i + k])
-    bestscore, profile = score(bestmotifs, entropy)
     while True:
         profile += succession
         motifs = mostprobablekmers(dna, k, profile)
@@ -206,7 +236,18 @@ def randomizedmotifsearch(dna, k, entropy=False, succession=1):
             return bestmotifs, bestscore
 
 
-def randomizedmotifsearchx(dna, k, iterations=1000, entropy=False, succession=1):
+def gibbssampler(dna, k, entropy=False, initmotifs_iters=5, succession=1):
+    motifs = list(randomizedmotifsearchx(dna, k, initmotifs_iters, entropy=entropy, succession=succession)[0][0])
+    profile = score(motifs, entropy)[1]
+    # motifs, _, profile = pickbestrandommotifs(dna, k, 20, entropy=entropy)
+    t = len(dna)
+    i = random.randint(0, t - 1)
+    replaced_motif = profilerandomkmer(dna[i], k, profile)[0]
+    motifs = motifs[:i] + [replaced_motif] + motifs[i+1:]
+    return motifs, score(motifs, entropy)[0]
+
+
+def randomizedmotifsearchx(dna, k, iterations=1000, use_gibbssampler=False, entropy=False, succession=1):
     """
     >>> randomizedmotifsearchx(['GCCCAA', 'GGCCTG', 'AACCTA', 'TTCCTT'], 3)
     ([('CCA', 'CCT', 'CCT', 'CCT'), ('CCC', 'CCT', 'CCT', 'CCT')], 1.0)
@@ -219,9 +260,10 @@ def randomizedmotifsearchx(dna, k, iterations=1000, entropy=False, succession=1)
     """
     best_score = float('inf')
     all_best_motifs = set()
+    rmotifsearch = gibbssampler if use_gibbssampler else randomizedmotifsearch
     while iterations > 0:
         iterations -= 1
-        motifs, sc = randomizedmotifsearch(dna, k, entropy, succession)
+        motifs, sc = rmotifsearch(dna, k, entropy, succession)
         if sc < best_score:
             all_best_motifs = {tuple(motifs)}
             best_score = sc
