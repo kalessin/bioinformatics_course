@@ -238,8 +238,7 @@ def randomizedmotifsearch(dna, k, entropy=False, succession=1):
 
 def gibbssampler(dna, k, entropy=False, initmotifs_iters=5, succession=1):
     motifs = list(randomizedmotifsearchx(dna, k, initmotifs_iters, entropy=entropy, succession=succession)[0][0])
-    profile = score(motifs, entropy)[1]
-    # motifs, _, profile = pickbestrandommotifs(dna, k, 20, entropy=entropy)
+    profile = score(motifs, entropy)[1]# + succession # apparently, succession added here impairs the solution
     t = len(dna)
     i = random.randint(0, t - 1)
     replaced_motif = profilerandomkmer(dna[i], k, profile)[0]
