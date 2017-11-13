@@ -263,7 +263,7 @@ def randomizedmotifsearchx(dna, k, iterations=1000, use_gibbssampler=False, entr
     rmotifsearch = gibbssampler if use_gibbssampler else randomizedmotifsearch
     while iterations > 0:
         iterations -= 1
-        motifs, sc = rmotifsearch(dna, k, entropy, succession)
+        motifs, sc = rmotifsearch(dna, k, entropy=entropy, succession=succession)
         if sc < best_score:
             all_best_motifs = {tuple(motifs)}
             best_score = sc
