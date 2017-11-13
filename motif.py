@@ -256,6 +256,7 @@ def gibbssampler(dna, k, entropy=False, iterations=1, random_initmotifs=False, i
     while iterations > 0:
         iterations -= 1
         i = random.randint(0, t - 1)
+        # excluding motifs[i] increases probability to get error when disabling succession here
         # profile = score(motifs[:i] + motifs[i+1:], entropy)[1] + succession # apparently, succession added here impairs the solution
         profile = score(motifs, entropy)[1]# + succession # apparently, succession added here impairs the solution
         replaced_motif = profilerandomkmer(dna[i], k, profile)[0]
