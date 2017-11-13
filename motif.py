@@ -20,6 +20,13 @@ def profileMatrix(strings):
     return count / t
 
 
+def consensus(profile):
+    result = ''
+    for i in np.argmax(profile, 0):
+        result += _SYMBOLS[i]
+    return result
+
+
 def score(strings, entropy=False):
     """
     Returns score of a set of k-mers motifs, and the profile matrix. If entropy is False, the score is the number of mismatches against the
@@ -197,11 +204,12 @@ def greedymotifsearch(dna, k, entropy=False, succession=1):
     return bestMotifs, bestScore
 
 
-def pickbestrandommotifs(dna, k, n=1, entropy=False):
+def pickbestrandommotifs(dna, k, iterations=1, entropy=False):
     bestmotifs = None
     bestscore = float('inf')
     bestprofile = None
-    for i in range(n):
+    while iterations > 0:
+        iterations -= 1
         motifs = []
         for string in dna:
             i = random.randint(0, len(string) - k)
@@ -214,7 +222,7 @@ def pickbestrandommotifs(dna, k, n=1, entropy=False):
     return bestmotifs, bestscore, bestprofile
 
 
-def randomizedmotifsearch(dna, k, entropy=False, succession=1):
+def randomizedmotifsearch(dna, k, entropy=False, initmotifs_iters=1, succession=1):
     """
     >>> while True:
     ...    motifs, score = randomizedmotifsearch(['GCCCAA', 'GGCCTG', 'AACCTA', 'TTCCTT'], 3)
@@ -223,7 +231,7 @@ def randomizedmotifsearch(dna, k, entropy=False, succession=1):
     >>> motifs in (['CCA', 'CCT', 'CCT', 'CCT'], ['CCC', 'CCT', 'CCT', 'CCT'])
     True
     """
-    bestmotifs, bestscore, profile = pickbestrandommotifs(dna, k, entropy=entropy)
+    bestmotifs, bestscore, profile = pickbestrandommotifs(dna, k, entropy=entropy, iterations=initmotifs_iters)
     t = len(dna)
     while True:
         profile += succession
@@ -236,16 +244,19 @@ def randomizedmotifsearch(dna, k, entropy=False, succession=1):
             return bestmotifs, bestscore
 
 
-def gibbssampler(dna, k, entropy=False, iterations=1, initmotifs_iters=5, succession=1):
-    motifs = list(randomizedmotifsearchx(dna, k, initmotifs_iters, entropy=entropy, succession=succession)[0][0])
-    profile = score(motifs, entropy)[1]# + succession # apparently, succession added here impairs the solution
-    t = len(dna)
+def gibbssampler(dna, k, entropy=False, iterations=1, random_initmotifs=False, initmotifs_iters=5, succession=1):
+    if random_initmotifs:
+        motifs = pickbestrandommotifs(dna, k, iterations=initmotifs_iters, entropy=entropy)[0]
+    else:
+        motifs = list(randomizedmotifsearchx(dna, k, iterations=initmotifs_iters, entropy=entropy, succession=succession)[0][0])
     best_score = float('inf')
     best_motifs = set()
 
+    t = len(dna)
     while iterations > 0:
         iterations -= 1
         i = random.randint(0, t - 1)
+        profile = score(motifs[:i] + motifs[i+1:], entropy)[1] + succession # apparently, succession added here impairs the solution
         replaced_motif = profilerandomkmer(dna[i], k, profile)[0]
         motifs = motifs[:i] + [replaced_motif] + motifs[i+1:]
         sc = score(motifs, entropy)[0]
@@ -257,7 +268,7 @@ def gibbssampler(dna, k, entropy=False, iterations=1, initmotifs_iters=5, succes
     return sorted(best_motifs)[0], best_score
 
 
-def randomizedmotifsearchx(dna, k, iterations=1000, use_gibbssampler=False, entropy=False, succession=1):
+def randomizedmotifsearchx(dna, k, iterations=1000, use_gibbssampler=False, entropy=False, random_initmotifs=False, initmotifs_iters=5, sampler_iterations=1, succession=1):
     """
     >>> randomizedmotifsearchx(['GCCCAA', 'GGCCTG', 'AACCTA', 'TTCCTT'], 3)
     ([('CCA', 'CCT', 'CCT', 'CCT'), ('CCC', 'CCT', 'CCT', 'CCT')], 1.0)
@@ -270,10 +281,14 @@ def randomizedmotifsearchx(dna, k, iterations=1000, use_gibbssampler=False, entr
     """
     best_score = float('inf')
     all_best_motifs = set()
-    rmotifsearch = gibbssampler if use_gibbssampler else randomizedmotifsearch
     while iterations > 0:
         iterations -= 1
-        motifs, sc = rmotifsearch(dna, k, entropy=entropy, succession=succession)
+        if use_gibbssampler:
+            motifs, sc = gibbssampler(dna, k, iterations=sampler_iterations, entropy=entropy,
+                                      initmotifs_iters=initmotifs_iters, random_initmotifs=random_initmotifs,
+                                      succession=succession)
+        else:
+            motifs, sc = randomizedmotifsearch(dna, k, entropy=entropy, initmotifs_iters=initmotifs_iters, succession=succession)
         if sc < best_score:
             all_best_motifs = {tuple(motifs)}
             best_score = sc
