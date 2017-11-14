@@ -298,3 +298,10 @@ def randomizedmotifsearchx(dna, k, iterations=500, use_gibbssampler=True, entrop
         elif sc == best_score:
             all_best_motifs.add(tuple(motifs))
     return sorted(all_best_motifs), best_score
+
+
+def findconsensus(dna, k, **kwargs):
+    all_best_motifs, best_score = randomizedmotifsearchx(dna, k, **kwargs)
+    profile = score(all_best_motifs[0])[1]
+    consensus_motif = consensus(profile)
+    return motifspattern(consensus_motif, dna), consensus_motif
