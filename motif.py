@@ -256,9 +256,7 @@ def gibbssampler(dna, k, entropy=False, iterations=1, random_initmotifs=False, i
     while iterations > 0:
         iterations -= 1
         i = random.randint(0, t - 1)
-        # excluding motifs[i] increases probability to get error when disabling succession here
-        # profile = score(motifs[:i] + motifs[i+1:], entropy)[1] + succession # apparently, succession added here impairs the solution
-        profile = score(motifs, entropy)[1]# + succession # apparently, succession added here impairs the solution
+        profile = score(motifs[:i] + motifs[i+1:], entropy)[1] + succession
         replaced_motif = profilerandomkmer(dna[i], k, profile)[0]
         motifs = motifs[:i] + [replaced_motif] + motifs[i+1:]
         sc = score(motifs, entropy)[0]
@@ -270,12 +268,15 @@ def gibbssampler(dna, k, entropy=False, iterations=1, random_initmotifs=False, i
     return sorted(best_motifs)[0], best_score
 
 
-def randomizedmotifsearchx(dna, k, iterations=1000, use_gibbssampler=False, entropy=False, random_initmotifs=False, initmotifs_iters=5, sampler_iterations=1, succession=1):
+def randomizedmotifsearchx(dna, k, iterations=500, use_gibbssampler=True, entropy=False, random_initmotifs=True, initmotifs_iters=20, sampler_iterations=200, succession=0.1):
     """
-    >>> randomizedmotifsearchx(['GCCCAA', 'GGCCTG', 'AACCTA', 'TTCCTT'], 3)
+    If random_initmotifs = False, it is recommended to reduce initmotifs_iters to 5 or algorithm will take too long
+
+    >>> randomizedmotifsearchx(['GCCCAA', 'GGCCTG', 'AACCTA', 'TTCCTT'], 3, use_gibbssampler=False, initmotifs_iters=1, succession=1)
     ([('CCA', 'CCT', 'CCT', 'CCT'), ('CCC', 'CCT', 'CCT', 'CCT')], 1.0)
     >>> while True:
-    ...     best, score = randomizedmotifsearchx(['CGCCCCTCTCGGGGGTGTTCAGTAAACGGCCA', 'GGGCGAGGTATGTGTAAGTGCCAAGGTGCCAG', 'TAGTACCGAGACCGAAAGAAGTATACAGGCGT', 'TAGATCAAGTTTCAGGTGCACGTCGGTGAACC', 'AATCCACCAGCTCCACGTGCAATGTTGGCCTA'], 8)
+    ...     best, score = randomizedmotifsearchx(['CGCCCCTCTCGGGGGTGTTCAGTAAACGGCCA', 'GGGCGAGGTATGTGTAAGTGCCAAGGTGCCAG', 'TAGTACCGAGACCGAAAGAAGTATACAGGCGT', 'TAGATCAAGTTTCAGGTGCACGTCGGTGAACC', 'AATCCACCAGCTCCACGTGCAATGTTGGCCTA'],
+    ...                                           8, use_gibbssampler=False, initmotifs_iters=1, succession=1)
     ...     if score == 9.0:
     ...         break
     >>> set(best).issubset({('AACGGCCA', 'AAGTGCCA', 'TAGTACCG', 'AAGTTTCA', 'ACGTGCAA'), ('TCTCGGGG', 'CCAAGGTG', 'TACAGGCG', 'TTCAGGTG', 'TCCACGTG')})
