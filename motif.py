@@ -300,8 +300,10 @@ def randomizedmotifsearchx(dna, k, iterations=500, use_gibbssampler=True, entrop
     return sorted(all_best_motifs), best_score
 
 
-def findconsensus(dna, k, **kwargs):
+def findconsensus(dna, k, confirm_below=13, **kwargs):
     all_best_motifs, best_score = randomizedmotifsearchx(dna, k, **kwargs)
     profile = score(all_best_motifs[0])[1]
     consensus_motif = consensus(profile)
-    return motifspattern(consensus_motif, dna), consensus_motif
+    if k < confirm_below: # with bigger k starts to add too much extra time and doesn't change final result
+        return motifspattern(consensus_motif, dna), consensus_motif
+    return (all_best_motifs[0], best_score), consensus_motif
