@@ -307,3 +307,25 @@ def findconsensus(dna, k, confirm_below=13, **kwargs):
     if k < confirm_below: # with bigger k starts to add too much extra time and doesn't change final result
         return motifspattern(consensus_motif, dna), consensus_motif
     return (all_best_motifs[0], best_score), consensus_motif
+
+
+def motifspatternplus(pattern, dna):
+    """
+    Runs motifspattern on all the 8 motifs that includes pattern and has an extra symbol,
+    and returns the ones with best score
+    """
+    best_motifs = None
+    best_consensus = None
+    best_score = float('inf')
+    for i in range(2):
+        for _s in _SYMBOLS:
+            if i == 0:
+                newpattern = _s + pattern
+            else:
+                newpattern = pattern + _s
+            motifs, sc = motifspattern(newpattern, dna)
+            if sc < best_score:
+                best_motifs = motifs
+                best_consensus = newpattern
+                best_score = sc
+    return best_motifs, best_score, best_consensus
