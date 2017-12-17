@@ -1,14 +1,20 @@
+from collections import defaultdict
+from operator import itemgetter
+
+
 def decomposition(k, text):
     """
     decompose a string into a sequence of overlapping k-mers
     >>> decomposition(5, 'CAATCCAAC')
-    ['AATCC', 'ATCCA', 'CAATC', 'CCAAC', 'TCCAA']
+    ['CAATC', 'AATCC', 'ATCCA', 'TCCAA', 'CCAAC']
+    >>> decomposition(5, 'AAAAAACGAT')
+    ['AAAAA', 'AAAAA', 'AAAAC', 'AAACG', 'AACGA', 'ACGAT']
     """
     n = len(text)
-    result = set()
+    result = []
     for i in xrange(n - k + 1):
-        result.add(text[i:i+k])
-    return sorted(result)
+        result.append(text[i:i+k])
+    return result
 
 
 def compose_from_sorted_kmers(kmers):
@@ -32,6 +38,8 @@ def overlap_graph(kmers):
     [('GCATG', ['CATGC']), ('CATGC', ['ATGCG']), ('AGGCA', ['GGCAT']), ('GGCAT', ['GCATG'])]
     >>> overlap_graph(['AAAAA', 'AAAAA', 'AAAAC', 'AAACG', 'AACGA', 'ACGAT'])
     [('AAAAA', ['AAAAA', 'AAAAC']), ('AAAAA', ['AAAAA', 'AAAAC']), ('AAAAC', ['AAACG']), ('AAACG', ['AACGA']), ('AACGA', ['ACGAT'])]
+    >>> overlap_graph(['AAAAA', 'AAAAA', 'AAAAC', 'AAACG', 'AACGA', 'ACGAA', 'CGAAA', 'GAAAA', 'AAAAA', 'AAAAT'])
+    [('AAAAA', ['AAAAA', 'AAAAC', 'AAAAA', 'AAAAT']), ('AAAAA', ['AAAAA', 'AAAAC', 'AAAAA', 'AAAAT']), ('AAAAC', ['AAACG']), ('AAACG', ['AACGA']), ('AACGA', ['ACGAA']), ('ACGAA', ['CGAAA']), ('CGAAA', ['GAAAA']), ('GAAAA', ['AAAAA', 'AAAAA', 'AAAAC', 'AAAAA', 'AAAAT']), ('AAAAA', ['AAAAA', 'AAAAA', 'AAAAC', 'AAAAT'])]
     """
     result = []
     for i in range(len(kmers)):
@@ -46,3 +54,24 @@ def overlap_graph(kmers):
         if ovp:
             result.append((kmer, ovp))
     return result
+
+
+def debruijn_graph(k, text):
+    """
+    Builds the de Bruijn graph of a sequence
+    >>> debruijn_graph(5, 'AAAAAACGAT')
+    [('AAAA', ['AAAA', 'AAAA', 'AAAC']), ('AAAC', ['AACG']), ('AACG', ['ACGA']), ('ACGA', ['CGAT'])]
+    >>> debruijn_graph(5, 'AGAAAACGAT')
+    [('AAAA', ['AAAC']), ('AAAC', ['AACG']), ('AACG', ['ACGA']), ('ACGA', ['CGAT']), ('AGAA', ['GAAA']), ('GAAA', ['AAAA'])]
+    >>> debruijn_graph(4, 'AAGATTCTCTAAGA')
+    [('AAG', ['AGA', 'AGA']), ('AGA', ['GAT']), ('ATT', ['TTC']), ('CTA', ['TAA']), ('CTC', ['TCT']), ('GAT', ['ATT']), ('TAA', ['AAG']), ('TCT', ['CTA', 'CTC']), ('TTC', ['TCT'])]
+    >>> debruijn_graph(2, 'TAATGCCATGGGATGTT')
+    [('A', ['A', 'T', 'T', 'T']), ('C', ['A', 'C']), ('G', ['A', 'C', 'G', 'G', 'T']), ('T', ['A', 'G', 'G', 'G', 'T'])]
+    """
+    kmers = decomposition(k, text)
+    debruijn_nodes = defaultdict(list)
+
+    for kmer in kmers:
+        debruijn_nodes[kmer[:k-1]].append(kmer[1:])
+
+    return [(d, sorted(dd)) for d, dd in sorted(debruijn_nodes.items(), key=itemgetter(0))]
