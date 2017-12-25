@@ -69,6 +69,20 @@ def debruijn_graph(k, text):
     [('A', ['A', 'T', 'T', 'T']), ('C', ['A', 'C']), ('G', ['A', 'C', 'G', 'G', 'T']), ('T', ['A', 'G', 'G', 'G', 'T'])]
     """
     kmers = decomposition(k, text)
+    return debruijn_graph_from_kmers(k, kmers)
+
+def debruijn_graph_from_kmers(k, kmers):
+    """
+    de Bruijn graph from ramdonly ordered kmers
+    >>> import random
+    >>> results = []
+    >>> for k, text in [(5, 'AAAAAACGAT'), (5, 'AGAAAACGAT'), (4, 'AAGATTCTCTAAGA'), (2, 'TAATGCCATGGGATGTT')]:
+    ...     kmers = decomposition(k, text)
+    ...     random.shuffle(kmers)
+    ...     results.append(debruijn_graph_from_kmers(k, kmers) == debruijn_graph(k, text))
+    >>> all(results)
+    True
+    """
     debruijn_nodes = defaultdict(list)
 
     for kmer in kmers:
