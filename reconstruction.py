@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from operator import itemgetter
 
 
@@ -71,6 +71,7 @@ def debruijn_graph(k, text):
     kmers = decomposition(k, text)
     return debruijn_graph_from_kmers(k, kmers)
 
+
 def debruijn_graph_from_kmers(k, kmers):
     """
     de Bruijn graph from ramdonly ordered kmers
@@ -89,3 +90,44 @@ def debruijn_graph_from_kmers(k, kmers):
         debruijn_nodes[kmer[:k-1]].append(kmer[1:])
 
     return [(d, sorted(dd)) for d, dd in sorted(debruijn_nodes.items(), key=itemgetter(0))]
+
+
+def walk_cycle(adjacency_map, starting_node=None):
+    """
+    Find the first cycle in the given eulerian adjacency list
+    >>> walk_cycle(OrderedDict([(0, [3]), (1, [0]), (2, [1, 6]), (3, [2]), (4, [2]), (5, [4]), (6, [5, 8]), (7, [9]), (8, [7]), (9, [6])]))
+    [0, 3, 2, 6, 8, 7, 9, 6, 5, 4, 2, 1, 0]
+    >>> walk_cycle(OrderedDict([(0, [3]), (1, [0]), (2, [6, 1]), (3, [2]), (4, [2]), (5, [4]), (6, [8, 5]), (7, [9]), (8, [7]), (9, [6])]))
+    [0, 3, 2, 1, 0]
+    """
+    if starting_node is not None:
+        result = [starting_node]
+    else:
+        for node in adjacency_map.iterkeys():
+            result = [node]
+            break
+    while True:
+        next_nodes = adjacency_map[result[-1]]
+        result.append(next_nodes.pop())
+        if not next_nodes:
+            adjacency_map.pop(result[-2])
+        if result[-1] == result[0]:
+            break
+    return result
+
+
+def euler_path(adjacency_map):
+    """
+    >>> euler_path(OrderedDict([(0, [3]), (1, [0]), (2, [6, 1]), (3, [2]), (4, [2]), (5, [4]), (6, [8, 5]), (7, [9]), (8, [7]), (9, [6])]))
+    [6, 5, 4, 2, 1, 0, 3, 2, 6, 8, 7, 9, 6]
+    """
+    cycle = walk_cycle(adjacency_map)
+    while True:
+        for i, node in enumerate(cycle):
+            if node in adjacency_map:
+                cycle = cycle[i:-1] + cycle[0:i]
+                cycle.extend(walk_cycle(adjacency_map, starting_node=node))
+                break
+        else:
+            break
+    return cycle
