@@ -120,7 +120,23 @@ def euler_path(adjacency_map):
     """
     >>> euler_path(OrderedDict([(0, [3]), (1, [0]), (2, [6, 1]), (3, [2]), (4, [2]), (5, [4]), (6, [8, 5]), (7, [9]), (8, [7]), (9, [6])]))
     [6, 5, 4, 2, 1, 0, 3, 2, 6, 8, 7, 9, 6]
+    >>> euler_path(OrderedDict([(0, [2]), (1, [3]), (2, [1]), (3, [0, 4]), (6, [3, 7]), (7, [8]), (8, [9]), (9, [6])]))
+    [6, 7, 8, 9, 6, 3, 0, 0, 2, 1, 3, 4]
     """
+    inverse_adjacency_map = defaultdict(list)
+    for node, next_nodes in adjacency_map.iteritems():
+        for next_node in next_nodes:
+            inverse_adjacency_map[next_node].append(node)
+    first_node = last_node = None
+    for node, next_nodes in adjacency_map.iteritems():
+        if len(next_nodes) > len(inverse_adjacency_map.get(node, [])):
+            first_node = node
+            break
+    for node, next_nodes in inverse_adjacency_map.iteritems():
+        if len(next_nodes) > len(adjacency_map.get(node, [])):
+            last_node = node
+            adjacency_map[last_node] = [first_node]
+            break
     cycle = walk_cycle(adjacency_map)
     while True:
         for i, node in enumerate(cycle):
@@ -129,5 +145,9 @@ def euler_path(adjacency_map):
                 cycle.extend(walk_cycle(adjacency_map, starting_node=node))
                 break
         else:
+            break
+    for i, node in enumerate(cycle):
+        if node == last_node and i + 1 < len(cycle) and cycle[i+1] == first_node:
+            cycle = cycle[i+1:] + cycle[0:i+1]
             break
     return cycle
