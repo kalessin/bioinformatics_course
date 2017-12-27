@@ -163,3 +163,12 @@ def euler_path(adjacency_map):
             cycle = cycle[i+1:] + cycle[1:i]
             break
     return cycle
+
+
+def sequence_from_kmers(k, kmers):
+    """
+    >>> sequence_from_kmers(4, ['CTTA', 'ACCA', 'TACC', 'GGCT', 'GCTT', 'TTAC'])
+    'GGCTTACCA'
+    """
+    adjacency_map = OrderedDict(debruijn_graph_from_kmers(k, kmers))
+    return compose_from_sorted_kmers(euler_path(adjacency_map))
