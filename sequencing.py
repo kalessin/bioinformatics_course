@@ -5,16 +5,14 @@ from operator import itemgetter
 def composition(k, text):
     """
     decompose a string into a sequence of overlapping k-mers
-    >>> composition(5, 'CAATCCAAC')
+    >>> list(composition(5, 'CAATCCAAC'))
     ['CAATC', 'AATCC', 'ATCCA', 'TCCAA', 'CCAAC']
-    >>> composition(5, 'AAAAAACGAT')
+    >>> list(composition(5, 'AAAAAACGAT'))
     ['AAAAA', 'AAAAA', 'AAAAC', 'AAACG', 'AACGA', 'ACGAT']
     """
     n = len(text)
-    result = []
     for i in xrange(n - k + 1):
-        result.append(text[i:i+k])
-    return result
+        yield text[i:i+k]
 
 
 def compose_from_sorted_kmers(kmers):
@@ -78,7 +76,7 @@ def debruijn_graph_from_kmers(k, kmers):
     >>> import random
     >>> results = []
     >>> for k, text in [(5, 'AAAAAACGAT'), (5, 'AGAAAACGAT'), (4, 'AAGATTCTCTAAGA'), (2, 'TAATGCCATGGGATGTT')]:
-    ...     kmers = composition(k, text)
+    ...     kmers = list(composition(k, text))
     ...     random.shuffle(kmers)
     ...     results.append(debruijn_graph_from_kmers(k, kmers) == debruijn_graph(k, text))
     >>> all(results)
