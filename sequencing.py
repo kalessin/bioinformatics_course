@@ -2,12 +2,12 @@ from collections import defaultdict, OrderedDict
 from operator import itemgetter
 
 
-def decomposition(k, text):
+def composition(k, text):
     """
     decompose a string into a sequence of overlapping k-mers
-    >>> decomposition(5, 'CAATCCAAC')
+    >>> composition(5, 'CAATCCAAC')
     ['CAATC', 'AATCC', 'ATCCA', 'TCCAA', 'CCAAC']
-    >>> decomposition(5, 'AAAAAACGAT')
+    >>> composition(5, 'AAAAAACGAT')
     ['AAAAA', 'AAAAA', 'AAAAC', 'AAACG', 'AACGA', 'ACGAT']
     """
     n = len(text)
@@ -19,7 +19,7 @@ def decomposition(k, text):
 
 def compose_from_sorted_kmers(kmers):
     """
-    compose original string from overlapping k-mers decomposition sequence
+    compose original string from overlapping k-mers composition sequence
     >>> compose_from_sorted_kmers(['ACCGA', 'CCGAA', 'CGAAG', 'GAAGC', 'AAGCT'])
     'ACCGAAGCT'
     """
@@ -68,7 +68,7 @@ def debruijn_graph(k, text):
     >>> debruijn_graph(2, 'TAATGCCATGGGATGTT')
     [('A', ['A', 'T', 'T', 'T']), ('C', ['A', 'C']), ('G', ['A', 'C', 'G', 'G', 'T']), ('T', ['A', 'G', 'G', 'G', 'T'])]
     """
-    kmers = decomposition(k, text)
+    kmers = composition(k, text)
     return debruijn_graph_from_kmers(k, kmers)
 
 
@@ -78,7 +78,7 @@ def debruijn_graph_from_kmers(k, kmers):
     >>> import random
     >>> results = []
     >>> for k, text in [(5, 'AAAAAACGAT'), (5, 'AGAAAACGAT'), (4, 'AAGATTCTCTAAGA'), (2, 'TAATGCCATGGGATGTT')]:
-    ...     kmers = decomposition(k, text)
+    ...     kmers = composition(k, text)
     ...     random.shuffle(kmers)
     ...     results.append(debruijn_graph_from_kmers(k, kmers) == debruijn_graph(k, text))
     >>> all(results)
