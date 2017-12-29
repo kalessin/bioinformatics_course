@@ -172,3 +172,14 @@ def sequence_from_kmers(k, kmers):
     """
     adjacency_map = OrderedDict(debruijn_graph_from_kmers(k, kmers))
     return compose_from_sorted_kmers(euler_path(adjacency_map))
+
+
+def universal_string(k):
+    kmers = [bin(i)[2:].zfill(k) for i in range(2**k)]
+    return sequence_from_kmers(k, kmers)
+
+
+def universal_circular_string(k):
+    kmers = [bin(i)[2:].zfill(k) for i in range(2**k)]
+    debruijn = dict(debruijn_graph_from_kmers(k, kmers))
+    return compose_from_sorted_kmers(euler_path(debruijn)[:-k+1])
