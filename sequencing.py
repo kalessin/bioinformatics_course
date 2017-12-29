@@ -181,3 +181,16 @@ def universal_circular_string(k):
     kmers = [bin(i)[2:].zfill(k) for i in range(2**k)]
     debruijn = dict(debruijn_graph_from_kmers(k, kmers))
     return compose_from_sorted_kmers(euler_path(debruijn)[:-k+1])
+
+
+def paired_composition(k, d, text):
+    """
+    >>> list(paired_composition(3, 1, 'TAATGCCATGGGATGTT'))
+    [('TAA', 'GCC'), ('AAT', 'CCA'), ('ATG', 'CAT'), ('TGC', 'ATG'), ('GCC', 'TGG'), ('CCA', 'GGG'), ('CAT', 'GGA'), ('ATG', 'GAT'), ('TGG', 'ATG'), ('GGG', 'TGT'), ('GGA', 'GTT')]
+    """
+    queue = []
+    nlen = d + k + 1
+    for kmer in composition(k, text):
+        queue.append(kmer)
+        if len(queue) == nlen:
+            yield queue.pop(0), kmer
