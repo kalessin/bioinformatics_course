@@ -22,8 +22,8 @@ def compose_from_sorted_kmers(kmers):
     'ACCGAAGCT'
     """
     result, kmers = kmers[0], kmers[1:]
+    k = len(result)
     for kmer in kmers:
-        k = len(kmer)
         assert kmer[0:k-1] == result[-k+1:]
         result += kmer[-1]
     return result
@@ -194,3 +194,21 @@ def paired_composition(k, d, text):
         queue.append(kmer)
         if len(queue) == nlen:
             yield queue.pop(0), kmer
+
+
+def compose_from_sorted_paired_kmers(d, paired_kmers):
+    """
+    >>> compose_from_sorted_paired_kmers(1, [('TAA', 'GCC'), ('AAT', 'CCA'), ('ATG', 'CAT'), ('TGC', 'ATG'), ('GCC', 'TGG'), ('CCA', 'GGG'), ('CAT', 'GGA'), ('ATG', 'GAT'), ('TGG', 'ATG'), ('GGG', 'TGT'), ('GGA', 'GTT')])
+    'TAATGCCATGGGATGTT'
+    >>> compose_from_sorted_paired_kmers(2, [('GACC', 'GCGC'), ('ACCG', 'CGCC'), ('CCGA', 'GCCG'), ('CGAG', 'CCGG'), ('GAGC', 'CGGA')])
+    'GACCGAGCGCCGGA'
+    """
+    k = len(paired_kmers[0][0])
+    resultP = compose_from_sorted_kmers(map(itemgetter(0), paired_kmers))
+    resultS = compose_from_sorted_kmers(map(itemgetter(1), paired_kmers))
+    if resultP[k+d:] == resultS[:-k-d]:
+        return resultP + resultS[-k-d:]
+
+
+def debruijn_graph_from_paired_kmers(k, paired_kmers):
+    return debruijn_graph_from_kmers(map(itemgetter(0), paired_kmers)), debruijn_graph_from_kmers(map(itemgetter(1), paired_kmers))
