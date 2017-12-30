@@ -1,5 +1,7 @@
+from copy import deepcopy
 from collections import defaultdict, OrderedDict
 from operator import itemgetter
+from itertools import permutations
 
 
 def composition(k, text):
@@ -121,7 +123,7 @@ class CloseLink(object):
 close_link = CloseLink()
 
 
-def euler_path(adjacency_map):
+def euler_path(adjacency_map, path_permutations=0):
     """
     >>> euler_path(OrderedDict([(0, [3]), (1, [0]), (2, [6, 1]), (3, [2]), (4, [2]), (5, [4]), (6, [8, 5]), (7, [9]), (8, [7]), (9, [6])]))
     [6, 5, 4, 2, 1, 0, 3, 2, 6, 8, 7, 9, 6]
@@ -131,7 +133,28 @@ def euler_path(adjacency_map):
     [6, 7, 8, 9, 6, 3, 0, 3, 5, 0, 2, 1, 3, 4]
     >>> euler_path(OrderedDict([(0, [2, 3]), (1, [3]), (2, [1, 4]), (3, [0, 4, 5]), (4, [2]), (5, [0]), (6, [3, 7]), (7, [8]), (8, [9]), (9, [6])]))
     [6, 7, 8, 9, 6, 3, 4, 2, 1, 3, 0, 3, 5, 0, 2, 4]
+    >>> euler_path(OrderedDict([(0, [2, 3]), (1, [3]), (2, [1, 4]), (3, [0, 4, 5]), (4, [2]), (5, [0]), (6, [3, 7]), (7, [8]), (8, [9]), (9, [6])]), 1)
+    [6, 7, 8, 9, 6, 3, 5, 0, 3, 4, 2, 1, 3, 0, 2, 4]
+    >>> euler_path(OrderedDict([(0, [2, 3]), (1, [3]), (2, [1, 4]), (3, [0, 4, 5]), (4, [2]), (5, [0]), (6, [3, 7]), (7, [8]), (8, [9]), (9, [6])]), 2)
+    [6, 7, 8, 9, 6, 3, 0, 2, 4, 2, 1, 3, 5, 0, 3, 4]
+    >>> euler_path(OrderedDict([(0, [2, 3]), (1, [3]), (2, [1, 4]), (3, [0, 4, 5]), (4, [2]), (5, [0]), (6, [3, 7]), (7, [8]), (8, [9]), (9, [6])]), 3)
+    [6, 7, 8, 9, 6, 3, 5, 0, 3, 0, 2, 4, 2, 1, 3, 4]
+    >>> euler_path(OrderedDict([(0, [2, 3]), (1, [3]), (2, [1, 4]), (3, [0, 4, 5]), (4, [2]), (5, [0]), (6, [3, 7]), (7, [8]), (8, [9]), (9, [6])]), 9)
+    Traceback (most recent call last):
+        ...
+    AssertionError
     """
+    adjacency_map = deepcopy(adjacency_map)
+    for node, next_nodes in adjacency_map.iteritems():
+        if path_permutations > 0:
+            permuted_next_nodes = permutations(next_nodes)
+            permuted_next_nodes.next()
+            for next_nodes in permuted_next_nodes:
+                path_permutations -= 1
+                adjacency_map[node] = list(next_nodes)
+                if path_permutations == 0:
+                    break
+    assert path_permutations == 0
     inverse_adjacency_map = defaultdict(list)
     for node, next_nodes in adjacency_map.iteritems():
         for next_node in next_nodes:
@@ -183,9 +206,9 @@ def universal_circular_string(k):
     return compose_from_sorted_kmers(euler_path(debruijn)[:-k+1])
 
 
-def paired_composition(k, d, text):
+def gapped_pairs_composition(k, d, text):
     """
-    >>> list(paired_composition(3, 1, 'TAATGCCATGGGATGTT'))
+    >>> list(gapped_pairs_composition(3, 1, 'TAATGCCATGGGATGTT'))
     [('TAA', 'GCC'), ('AAT', 'CCA'), ('ATG', 'CAT'), ('TGC', 'ATG'), ('GCC', 'TGG'), ('CCA', 'GGG'), ('CAT', 'GGA'), ('ATG', 'GAT'), ('TGG', 'ATG'), ('GGG', 'TGT'), ('GGA', 'GTT')]
     """
     queue = []
@@ -196,12 +219,14 @@ def paired_composition(k, d, text):
             yield queue.pop(0), kmer
 
 
-def compose_from_sorted_paired_kmers(d, paired_kmers):
+def compose_from_sorted_gapped_pairs(d, paired_kmers):
     """
-    >>> compose_from_sorted_paired_kmers(1, [('TAA', 'GCC'), ('AAT', 'CCA'), ('ATG', 'CAT'), ('TGC', 'ATG'), ('GCC', 'TGG'), ('CCA', 'GGG'), ('CAT', 'GGA'), ('ATG', 'GAT'), ('TGG', 'ATG'), ('GGG', 'TGT'), ('GGA', 'GTT')])
+    >>> compose_from_sorted_gapped_pairs(1, [('TAA', 'GCC'), ('AAT', 'CCA'), ('ATG', 'CAT'), ('TGC', 'ATG'), ('GCC', 'TGG'), ('CCA', 'GGG'), ('CAT', 'GGA'), ('ATG', 'GAT'), ('TGG', 'ATG'), ('GGG', 'TGT'), ('GGA', 'GTT')])
     'TAATGCCATGGGATGTT'
-    >>> compose_from_sorted_paired_kmers(2, [('GACC', 'GCGC'), ('ACCG', 'CGCC'), ('CCGA', 'GCCG'), ('CGAG', 'CCGG'), ('GAGC', 'CGGA')])
+    >>> compose_from_sorted_gapped_pairs(2, [('GACC', 'GCGC'), ('ACCG', 'CGCC'), ('CCGA', 'GCCG'), ('CGAG', 'CCGG'), ('GAGC', 'CGGA')])
     'GACCGAGCGCCGGA'
+    >>> compose_from_sorted_gapped_pairs(3, [('GTG', 'GTG'), ('TGG', 'TGA'), ('GGT', 'GAG'), ('GTC', 'AGA'), ('TCG', 'GAT'), ('CGT', 'ATG'), ('GTG', 'TGT'), ('TGA', 'GTT'), ('GAG', 'TTG'), ('AGA', 'TGA')])
+    'GTGGTCGTGAGATGTTGA'
     """
     k = len(paired_kmers[0][0])
     resultP = compose_from_sorted_kmers(map(itemgetter(0), paired_kmers))
@@ -210,5 +235,27 @@ def compose_from_sorted_paired_kmers(d, paired_kmers):
         return resultP + resultS[-k-d:]
 
 
-def debruijn_graph_from_paired_kmers(k, paired_kmers):
-    return debruijn_graph_from_kmers(map(itemgetter(0), paired_kmers)), debruijn_graph_from_kmers(map(itemgetter(1), paired_kmers))
+def debruijn_graph_from_gapped_pairs(k, paired_kmers):
+    return debruijn_graph_from_kmers(k, map(itemgetter(0), paired_kmers)), debruijn_graph_from_kmers(k, map(itemgetter(1), paired_kmers))
+
+
+def euler_path_for_gapped_pairs(k, d, prefix_adjacency_map, suffix_adjacency_map):
+    permutations = 0
+    while True:
+        peuler_path = euler_path(prefix_adjacency_map, permutations)
+        seuler_path = euler_path(suffix_adjacency_map)
+        if peuler_path[k+d:] == seuler_path[:-k-d]:
+            break
+        else:
+            permutations += 1
+    return zip(peuler_path, seuler_path)
+
+
+def sequence_from_gapped_pairs(k, d, paired_kmers):
+    """
+    >>> sequence_from_gapped_pairs(4, 2, [('GAGA', 'TTGA'), ('TCGT', 'GATG'), ('CGTG', 'ATGT'), ('TGGT', 'TGAG'), ('GTGA', 'TGTT'), ('GTGG', 'GTGA'), ('TGAG', 'GTTG'), ('GGTC', 'GAGA'), ('GTCG', 'AGAT')])
+    'GTGGTCGTGAGATGTTGA'
+    """
+    adjacency_maps = debruijn_graph_from_gapped_pairs(k, paired_kmers)
+    epath = euler_path_for_gapped_pairs(k, d, OrderedDict(adjacency_maps[0]), OrderedDict(adjacency_maps[1]))
+    return compose_from_sorted_gapped_pairs(d + 1, epath)
